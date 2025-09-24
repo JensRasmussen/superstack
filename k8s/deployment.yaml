@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: superstack-web
+  labels:
+    app: superstack-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: superstack-web
+  template:
+    metadata:
+      labels:
+        app: superstack-web
+    spec:
+      containers:
+        - name: web
+          image: <ACR_LOGIN_SERVER>/superstack-web:latest # replaced in pipeline
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

@@ -1,0 +1,88 @@
+# --- .NET / C# ---
+[Bb]in/
+[Oo]bj/
+*.user
+*.rsuser
+*.suo
+*.userprefs
+*.ilk
+*.pdb
+*.cache
+*.log
+*.vs/
+**/Properties/launchSettings.json
+
+# Rider / JetBrains
+.idea/
+*.iml
+
+# VS Code settings (keep tasks, ignore everything else except launch if added)
+.vscode/*
+!/.vscode/tasks.json
+!/.vscode/launch.json
+
+# Runtime / build artifacts
+*.dll
+*.exe
+*.db
+*.db-shm
+*.db-wal
+
+# Publish outputs
+publish/
+
+# Secrets (never commit; create locally)
+secrets.json
+appsettings.*.local.json
+
+# --- Terraform ---
+.terraform/
+.terraform.*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+
+# Sensitive Terraform variable files
+terraform.tfvars
+*.auto.tfvars
+*.auto.tfvars.json
+
+# --- Kubernetes / ArgoCD ---
+# Local kube configs / merged configs
+kubeconfig*
+.kube/
+
+# Helm charts build artifacts
+charts/*.tgz
+
+# --- General ---
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+~$*
+
+# Node / Frontend (in case of future additions)
+node_modules/
+*.tsbuildinfo
+
+# --- Container / Docker ---
+*.tar
+
+# --- Coverage / Reports ---
+coverage/
+TestResult*/
+*.coverage
+*.coveragexml
+
+# --- Misc ---
+.env
+.env.*
+!.env.example

@@ -1,0 +1,75 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+      ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
+      ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+      - name: Terraform Init
+        run: terraform -chdir=terraform init
+      - name: Terraform Apply
+        run: terraform -chdir=terraform apply -auto-approve
+      - name: Get ACR name
+        id: acr
+        run: |
+          ACR_NAME=$(terraform -chdir=terraform output -raw acr_name 2>/dev/null || echo "")
+          if [ -z "$ACR_NAME" ]; then echo "acr_name output not found; set terraform output" && exit 1; fi
+          echo "acr_name=$ACR_NAME" >> $GITHUB_OUTPUT
+      - name: Build and Push Image
+        run: |
+          az acr login --name ${{ steps.acr.outputs.acr_name }}
+          IMAGE=${{ steps.acr.outputs.acr_name }}.azurecr.io/superstack-web:${{ github.sha }}
+          docker build -t $IMAGE .
+          docker push $IMAGE
+          echo "image=$IMAGE" >> $GITHUB_ENV
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+      - name: Get AKS Credentials
+        run: |
+          AKS_RG=$(terraform -chdir=terraform output -raw resource_group_name)
+          AKS_NAME=$(terraform -chdir=terraform output -raw aks_name)
+          az aks get-credentials -g "$AKS_RG" -n "$AKS_NAME" --overwrite-existing
+      - name: Patch Kubernetes Deployment image (optional immediate deploy)
+        run: |
+          kubectl set image deployment/superstack-web web=$IMAGE --record || echo "Deployment not yet created by ArgoCD"
+      - name: ArgoCD Sync (optional)
+        if: ${{ env.ARGOCD_SERVER != '' }}
+        run: |
+          curl -k -X POST "$ARGOCD_SERVER/api/v1/session" -d '{"username":"'$ARGOCD_USERNAME'","password":"'$ARGOCD_PASSWORD'"}' \
+            -H 'Content-Type: application/json' > session.json
+          TOKEN=$(jq -r '.token' session.json)
+          curl -k -H "Authorization: Bearer $TOKEN" -X POST "$ARGOCD_SERVER/api/v1/applications/superstack-webapp/sync" || echo "ArgoCD sync call failed"
