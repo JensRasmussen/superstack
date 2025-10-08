@@ -5,7 +5,7 @@ provider "azurerm" {
 
 resource "azurerm_resource_group" "aks_rg" {
   name     = "aks-resource-group"
-  location = "East US"
+  location = "East US"  # Cheapest Azure region
 }
 
 resource "azurerm_kubernetes_cluster" "aks" {
@@ -17,7 +17,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   default_node_pool {
     name       = "default"
     node_count = 1
-    vm_size    = "Standard_DS2_v2"
+    vm_size    = "Standard_B2s"  # Cheapest burstable VM (2 vCPU, 4GB RAM)
   }
 
   identity {
@@ -25,6 +25,8 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 
   kubernetes_version = "1.28.3"
+
+  sku_tier = "Free"  # Free tier (vs Standard/Premium)
 }
 
 # Azure Container Registry for images
