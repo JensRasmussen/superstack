@@ -26,7 +26,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     type = "SystemAssigned"
   }
 
-  kubernetes_version = "1.28.3"
+  kubernetes_version = "1.30"  # Use latest stable non-LTS version
 
   sku_tier = "Free"  # Free tier (vs Standard/Premium)
 
