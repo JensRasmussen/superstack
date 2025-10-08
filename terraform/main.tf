@@ -15,9 +15,11 @@ resource "azurerm_kubernetes_cluster" "aks" {
   dns_prefix          = "aksdns"
 
   default_node_pool {
-    name       = "default"
-    node_count = 1
-    vm_size    = "Standard_B2s"  # Cheapest burstable VM (2 vCPU, 4GB RAM)
+    name                = "default"
+    vm_size             = "Standard_B2s"  # Cheapest burstable VM (2 vCPU, 4GB RAM)
+    enable_auto_scaling = true
+    min_count           = 0  # Scale down to 0 nodes when idle
+    max_count           = 2
   }
 
   identity {
@@ -27,6 +29,13 @@ resource "azurerm_kubernetes_cluster" "aks" {
   kubernetes_version = "1.28.3"
 
   sku_tier = "Free"  # Free tier (vs Standard/Premium)
+
+  auto_scaler_profile {
+    scale_down_delay_after_add       = "10m"
+    scale_down_unneeded              = "30m"  # Scale down after 30 min of inactivity
+    scale_down_unready               = "30m"
+    scale_down_utilization_threshold = "0.3"  # Scale down if CPU < 30%
+  }
 }
 
 # Azure Container Registry for images
