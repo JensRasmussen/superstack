@@ -17,7 +17,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   default_node_pool {
     name                = "default"
     vm_size             = "Standard_B2s"  # Cheapest burstable VM (2 vCPU, 4GB RAM)
-    enable_auto_scaling = true
+    auto_scaling_enabled = true
     min_count           = 0  # Scale down to 0 nodes when idle
     max_count           = 2
   }
